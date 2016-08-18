@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd" [
+    <!ENTITY root_debug SYSTEM "log4j2.include.root_debug.xml">
+    <!ENTITY common     SYSTEM "log4j2.include.common.xml">
+]>
+<Configuration status="TRACE" monitorInterval="120">
+
+    &root_debug;
+    &common;
+
+    <Properties>
+        <Property name="filename">/var/log/data-monitor.error.log</Property>
+        <Property name="filename_trace">/var/log/data-monitor.trace.log</Property>
+        <Property name="format">%date{ISO8601} [%level{length=1}] (%thread) %logger: %message%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${format}"/>
+        </Console>
+
+        <RollingFile name="File" fileName="${filename}"
+                     filePattern="${filename}-%i">
+            <PatternLayout pattern="${format}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="500 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+        <RollingFile name="TraceFile" fileName="${filename_trace}"
+                     filePattern="${filename_trace}-%i">
+            <PatternLayout pattern="${format}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="500 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="1"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="com.amazonaws" level="WARN"/>
+
+        <Root level="TRACE">
+            <AppenderRef ref="Console"      level="INFO"/>
+            <AppenderRef ref="File"         level="INFO"/>
+            <AppenderRef ref="TraceFile"    level="TRACE"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

@@ -1,0 +1,76 @@
+  {:owner-id "814502374204",
+   :group-names [],
+   :reservation-id "r-87308a37",
+   :instances
+   [{:monitoring {:state "disabled"},
+     :tags
+     [{:value "beetl-d0production-v059",
+       :key "aws:autoscaling:groupName"}],
+     :root-device-type "ebs",
+     :private-dns-name "ip-172-31-31-33.ec2.internal",
+     :hypervisor "xen",
+     :subnet-id "subnet-4cb91515",
+     :key-name "production-0.1",
+     :architecture "x86_64",
+     :security-groups
+     [{:group-name "vpc_staff", :group-id "sg-601edd04"}],
+     :source-dest-check true,
+     :root-device-name "/dev/sda1",
+     :virtualization-type "hvm",
+     :product-codes [],
+     :instance-type "m3.medium",
+     :ami-launch-index 0,
+     :image-id "ami-9ea33c89",
+     :state {:name "running", :code 16},
+     :state-transition-reason "",
+     :network-interfaces
+     [{:description "",
+       :private-dns-name "ip-172-31-31-33.ec2.internal",
+       :subnet-id "subnet-4cb91515",
+       :source-dest-check true,
+       :private-ip-addresses
+       [{:private-ip-address "172.31.31.33",
+         :private-dns-name "ip-172-31-31-33.ec2.internal",
+         :primary true}],
+       :network-interface-id "eni-3259ad28",
+       :vpc-id "vpc-0769ec62",
+       :mac-address "0e:1e:1f:b1:e6:c3",
+       :status "in-use",
+       :private-ip-address "172.31.31.33",
+       :owner-id "814502374204",
+       :groups [{:group-name "vpc_staff", :group-id "sg-601edd04"}],
+       :attachment
+       {:status "attached",
+        :attachment-id "eni-attach-fa84d82e",
+        :device-index 0,
+        :attach-time
+        #object[org.joda.time.DateTime 0x18f557ce "2016-08-10T10:37:27.000-05:00"],
+        :delete-on-termination true}}],
+     :vpc-id "vpc-0769ec62",
+     :ebs-optimized false,
+     :instance-id "i-af67613f",
+     :iam-instance-profile
+     {:id "AIPAI3XTNYHDH5N5DJPF6",
+      :arn
+      "arn:aws:iam::814502374204:instance-profile/dataservices-tasks"},
+     :public-dns-name "",
+     :private-ip-address "172.31.31.33",
+     :placement
+     {:tenancy "default",
+      :group-name "",
+      :availability-zone "us-east-1d"},
+     :client-token
+     "2d650c39-7705-421e-8268-701f362bde2a_subnet-4cb91515_1",
+     :launch-time
+     #object[org.joda.time.DateTime 0x7d7761d6 "2016-08-10T10:37:27.000-05:00"],
+     :block-device-mappings
+     [{:ebs
+       {:status "attached",
+        :volume-id "vol-678598c3",
+        :attach-time
+        #object[org.joda.time.DateTime 0x57caa7 "2016-08-10T10:37:27.000-05:00"],
+        :delete-on-termination true},
+       :device-name "/dev/sda1"}]}],
+   :groups [],
+   :requester-id "226008221399"}
+

@@ -1,0 +1,6 @@
+{ ; Separates out environment setup, so it can be used to determine "profile (dev/staging/prod)"
+  ; used to parse out other configuration.
+  ; Override by setting the environment variable, or setting for the execution of the program
+  ; (e.g. BD_APP_DATA_MONITOR_ENV_NAME=prod lein run)
+
+  :env-name  #or [#env BD_APP_DATA_MONITOR_ENV_NAME "default"] }

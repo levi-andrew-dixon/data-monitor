@@ -1,0 +1,96 @@
+{
+  ; NOTE: This extended EDN format depends on the "Aero" EDN clojure library; adding support
+  ;       for includes, string building, profile management, custom tag handlers, etc.
+  ;       e.g. (#new_tag ["input_string"])
+
+  :app-name   "DATA_MONITOR"
+
+  :app-conf-env-var-name "BD_APP_DATA_MONITOR_CONFIG_PATH"
+
+  ; Common recipient email address; allows modification of alert recipient at a single / central location
+  :dev-recipient-email "levi@bradsdeals.com"
+
+  :profile-name #profile {
+    :default  "default"
+    :dev      "dev"
+    :staging  "staging"
+    :prod     "prod"}
+
+  :shell-output #shell ["ls" "-la" "/"]
+  
+  :psql-path  "/usr/local/bin/psql"
+
+  ; Include paths are relative to including file
+  :secret #include "secret/env_setup.edn"
+
+  ;Configure monitoring and alerting behavior
+
+  :monitoring {
+    :email {
+      :sender         "dataservices@bradsdeals.com"
+      :recipient      #profile {
+        :default  ^:ref [:dev-recipient-email]
+        :dev      ^:ref [:dev-recipient-email] 
+        :staging  "dataservices@bradsdeals.com"
+        :prod     "dataservices@bradsdeals.com"}
+      :subject-prefix "DATA MONITOR ALERT: "
+      :num-retries-before-fail              3
+      :measure-delta-percentage-threshold   0.30}
+
+    :tasks {
+
+      ; BEGIN: sql task list
+      :sql [
+        { :task-id          1
+          :task-name        "assert-fact-commission-rev-present-daily-network"
+          :description      "Ensure that each network has recent / expected fact commission data (by day)"
+          :validation-type  "assertion"
+          :assertion-type   "no-rows"
+          :file-name        "sql/assert_no_missing_dates_fact_commission.sql"
+          :exec-method      "psql"
+
+          :alert-vec [
+            { :alert-action-type :pager-duty
+              :details {
+                :method           "email"
+                :email-recipient  #profile {
+                  :default  ^:ref [:dev-recipient-email]
+                  :dev      ^:ref [:dev-recipient-email]
+                  :staging  "dataservices-alerts-missing-revenue@shopsmart.pagerduty.com"
+                  :prod     "dataservices-alerts-missing-revenue@shopsmart.pagerduty.com" }}}
+            { :alert-action-type :team-email
+              :details {
+                :email-recipient  ^:ref [:monitoring :email :recipient] }}]}]
+      ; END: sql task list
+
+      ; BEGIN: SSH task list
+      ; Tasks that validate output or remote shell commands
+      :ssh [
+        { :task-id            1
+          :task-name          "assert-curent-day-beetl-log-is-exception-free"
+          :description        "Ensure that beetl error log has no recent errors"
+          :validation-type    "assertion"
+          :assertion-type     "no-lines"
+          :username           "ubuntu"
+          :remote-hostname    "172.31.31.33"
+          :ec2-instance       "beetl-d0production-v059"
+          :ec2-instance-regex "beetl-d0production-v(\\d+)"
+          :file-name          "bash/assert-recent-beetl-log-is-error-free.sh"
+          :remote-command     "/usr/bin/pcregrep --buffer-size=20M -B1 -M '(?s)Exception.*?\\n\\d{4}-\\d{2}-\\d{2}T' /var/log/beetl-trace.log |grep -Ev \"\\[(T|I)\\]\""
+          :exec-method        "ssh"
+
+          :alert-vec [
+            { :alert-action-type :pager-duty
+              :details
+              { :method           "email"
+                :email-recipient  #profile {
+                  :default  ^:ref [:dev-recipient-email]
+                  :dev      ^:ref [:dev-recipient-email]
+                  :staging  "dataservices-alerts-missing-revenue@shopsmart.pagerduty.com"
+                  :prod     "dataservices-alerts-missing-revenue@shopsmart.pagerduty.com"
+              }}}
+            { :alert-action-type :team-email
+              :details {
+                :email-recipient  ^:ref [:monitoring :email :recipient] }}]}]}}}
+      ; END: SSH task list
+
