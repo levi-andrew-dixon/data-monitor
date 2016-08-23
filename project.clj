@@ -1,4 +1,4 @@
-(defproject data-monitor "0.1.4-SNAPSHOT"
+(defproject data-monitor "0.1.5"
 
   :description  "CLI tools and libraries for monitoring and alerting on data integrity issues (e.g. anomolous or missing data)"
   :url          "https://github.com/shopsmart/data-monitor"
@@ -31,6 +31,8 @@
     ; [clojurewerkz/quartzite                 "2.0.0"]  ; Scheduler
     [clj-ssh                                "0.5.14"]   ; SSH via jsch
     [zookeeper-clj                          "0.9.4"]    ; Zookeeper
+    [clj-time                               "0.12.0"]   ; Joda time wrapper
+    [clj-cron-parse                         "0.1.4"]    ; Cron expression interpreter
 
     ; ==== AWS libs ==== ;
 

@@ -48,6 +48,8 @@
           :assertion-type   "no-rows"
           :file-name        "sql/assert_no_missing_dates_fact_commission.sql"
           :exec-method      "psql"
+          ;:cron-expression  "0 0 * * * *"
+          :cron-expression "@hourly"
 
           :alert-vec [
             { :alert-action-type :pager-duty
@@ -72,12 +74,13 @@
           :validation-type    "assertion"
           :assertion-type     "no-lines"
           :username           "ubuntu"
-          :remote-hostname    "172.31.31.33"
-          :ec2-instance       "beetl-d0production-v059"
+          ;:remote-hostname    "172.31.31.33"
+          ;:ec2-instance       "beetl-d0production-v059"
           :ec2-instance-regex "beetl-d0production-v(\\d+)"
           :file-name          "bash/assert-recent-beetl-log-is-error-free.sh"
           :remote-command     "/usr/bin/pcregrep --buffer-size=20M -B1 -M '(?s)Exception.*?\\n\\d{4}-\\d{2}-\\d{2}T' /var/log/beetl-trace.log |grep -Ev \"\\[(T|I)\\]\""
           :exec-method        "ssh"
+          :cron-expression    "0 0 23 * * *"
 
           :alert-vec [
             { :alert-action-type :pager-duty

@@ -10,6 +10,7 @@
     [clojure.string                   :as string]
 
     ; Dependencies on libs contained in this app
+    [data-monitor.lib.aws.ec2         :as ec2]
     [data-monitor.lib.util.alert      :as alert]
     [data-monitor.lib.util.config     :as conf]
     [data-monitor.lib.util.email      :as email]
@@ -18,9 +19,15 @@
 
     ; 3rd party libs
     [aero.core                        :as aero]
-    [amazonica.aws.ec2                :as aws-ec2])
+
+    [clojure.xml :as xml]
+    [clojure.zip :as zip])
 
   (:gen-class))
+
+
+(defonce nrepl-port 7890)
+
 
 (defn- construct-context
   "Read configuration and setup a run-time environment for tracking state
@@ -31,6 +38,7 @@
     ctx-atom
   )
 )
+
 
 (defn process-sql-task-results
   [ctx-atom task-map file-name query-results num-rows-vec]
@@ -55,6 +63,7 @@
                       query-results)
                     file-name)}))
             (conf/get-val-memoized-fn task-map [:alert-vec]))))))
+
 
 (defn process-ssh-task-results
   "Process results of SSH monitoring task"
@@ -83,7 +92,9 @@
                 "<pre></body>") }))
         (conf/get-val-memoized-fn task-map [:alert-vec]))))))
 
+
 (defn- process-sql-task
+  "Process a single SQL monitoring task"
   [ctx-atom task-map]
 
   (log/debug "Processing SQL task-map: " task-map)
@@ -118,7 +129,7 @@
 ; TODO: Implement process-psql-task and process-sql-task using exec method of db-lib (using stub db API functions)
 
 (defn- process-ssh-task
-  "Process single SSH task"
+  "Process a single SSH monitoring task"
   [ctx-atom task-map]
 
   (log/debug "Processing SSH task-map: " task-map)
@@ -144,35 +155,38 @@
       (let [
         ret-val
           (ssh/remote-exec {
-            :username        username
-            :host            remote-hostname
-            :remote-command (or remote-command (or file-name (slurp file-name))) })]
+            :username       username
+            :host
+              (or remote-hostname
+                  (ec2/get-private-hostname-from-instance-map
+                    (first (ec2/get-instances-by-name (or ec2-instance (re-pattern ec2-instance-regex))))))
+            :remote-command (or remote-command (or file-name (slurp file-name)))})]
 
         (log/debug "SSH ret-val: " ret-val)
-      
-        (log/debug  "SSH command completed successfully")
+        (log/debug "SSH command completed successfully")
+
         (process-ssh-task-results ctx-atom task-map ret-val))
-    
   
     (catch Exception e
-      (throw (ex-info (str "Unable to process task: " (.getMessage e)) {:task-map task-map} e))))
-  )
-)
+      (throw (ex-info (str "Unable to process task: " (.getMessage e)) {:task-map task-map} e))))))
 
 
 (defn- process-monitoring-tasks
+  "Process each monitoring list of tasks by type"
   [ctx-atom task-map]
   
   (let [
     conf-map (@ctx-atom :config-map)]
 
     (if-let [sql-tasks (task-map :sql)]
-      (doall (map (fn [task] (process-sql-task ctx-atom task)) sql-tasks)))
+      (doall (pmap (fn [task] (process-sql-task ctx-atom task)) sql-tasks)))
 
     (if-let [ssh-tasks (task-map :ssh)]
-      (doall (map (fn [task] (process-ssh-task ctx-atom task)) ssh-tasks)))))
+      (doall (pmap (fn [task] (process-ssh-task ctx-atom task)) ssh-tasks)))))
+
 
 (defn- teardown-cleanup
+  "Factored out program cleanup"
   [nrepl-server]
 
   (log/debug "Running teardown-cleanup")
@@ -186,6 +200,7 @@
   (shutdown-agents)
 )
 
+
 (defn -main
   "Entry point for the CLI program"
   [& args]
@@ -193,7 +208,7 @@
   (log/info "Initializing ...")
 
   ; Start nREPL
-  (defonce nrepl-server (nrepl/start-server :port 7890))
+  (defonce nrepl-server (nrepl/start-server :port nrepl-port))
 
   (let [
     config-atom   (atom nil)]
@@ -206,11 +221,11 @@
       conf              (conf/read-conf-resource "config/config.edn" {:profile-name conf-env-name})]
       (reset! config-atom   conf))
 
-  ; Expected exception
+  ; Expected possible exception (if run from a JAR)
   (catch Exception e
     (log/debug "Exception loading config using default resolver, attempting again using custom file resolver: " (.getMessage e))))
 
-  ; If config file was not found using FS path, use JAR URI and treat the file(s) as a resource
+  ; If config file was not found using FS path, use JAR URI and treat the file(s) as resource(s)
   (when (empty? (when config-atom @config-atom))
     (try
       (log/debug "Loading configuation using custom file resolver ...")
